@@ -1,3 +1,4 @@
 # SelectableText
 长按自由选择文本的textview
-![image](https://github.com/panacena/mengqu/blob/master/readme/Screenshot_2016-07-10-22-17- 15_zkk.com.mengqu.png)
+! [img] (https://github.com/super5723/SelectableText/blob/master/%E6%88%AA%E5%9B%BE20180330205529.png)
+

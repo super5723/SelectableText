@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/activity_on_draw_test"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingLeft="50dp"
+    android:orientation="vertical"
+    >
+
+    <!--<LinearLayout-->
+    <!--android:background="@drawable/bg_operation"-->
+    <!--android:layout_width="match_parent"-->
+    <!--android:layout_height="100dp"></LinearLayout>-->
+    <!--<view-->
+    <!--android:background="@drawable/triangle_down"-->
+    <!--android:layout_width="20dp"-->
+    <!--android:layout_height="20dp" />-->
+
+    <android.support.v7.widget.RecyclerView
+        android:layout_marginTop="20dp"
+        android:id="@+id/recyclerView"
+        android:layout_width="match_parent"
+        android:visibility="gone"
+        android:layout_height="500dp"></android.support.v7.widget.RecyclerView>
+
+    <wy.test.tools.selectabletext.selectText.SelectableTextView
+        android:layout_marginTop="200dp"
+        android:text="高经理经历了楞伽经了解了感觉啊冷静客观；个金刚狼看了几个链接旮旯角落感觉咖喱鸡"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+</LinearLayout>

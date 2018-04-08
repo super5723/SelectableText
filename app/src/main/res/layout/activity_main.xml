@@ -21,7 +21,7 @@
         android:layout_marginTop="20dp"
         android:id="@+id/recyclerView"
         android:layout_width="match_parent"
-        android:visibility="gone"
+        android:visibility="visible"
         android:layout_height="500dp"></android.support.v7.widget.RecyclerView>
 
     <wy.test.tools.selectabletext.selectText.SelectableTextView

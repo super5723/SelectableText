@@ -1,6 +1,5 @@
 package wy.test.tools.selectabletext.selectText;
 
-import android.app.Activity;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Point;
@@ -117,15 +116,13 @@ public class SelectableTextView extends TextView implements PromptPopWindow.Curs
         Point right = new Point(x, y);
 
         Rect hitRect = new Rect();
-        if (getContext() instanceof Activity) {
-            Activity activity = (Activity) getContext();
-            View contentView = activity.findViewById(android.R.id.content);
-            contentView.getHitRect(hitRect);
-        }
+        getGlobalVisibleRect(hitRect);
 
         hitRect.left = hitRect.left - CursorView.getFixWidth();
-        promptPopWindow.setCursorVisible(true, hitRect.contains(left.x, left.y));
-        promptPopWindow.setCursorVisible(false, hitRect.contains(right.x, right.y));
+        hitRect.right += 1;
+        hitRect.bottom += 1;
+        promptPopWindow.setCursorVisible(true, !hitRect.isEmpty() && hitRect.contains(left.x, left.y));
+        promptPopWindow.setCursorVisible(false, !hitRect.isEmpty() && hitRect.contains(right.x, right.y));
         promptPopWindow.showCursor(this, left, right, mSelectedTextInfo.startLineTop + coors[1] + getPaddingTop());
 
     }

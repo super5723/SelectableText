@@ -27,6 +27,7 @@ public class SelectableTextView extends TextView implements PromptPopWindow.Curs
     private SelectedTextInfo mSelectedTextInfo;
     private BackgroundColorSpan backgroundColorSpan = new BackgroundColorSpan(Color.GRAY);
     private int downX, downY;
+    private Spannable orgSpannable;
 
     public SelectableTextView(Context context) {
         super(context);
@@ -49,6 +50,7 @@ public class SelectableTextView extends TextView implements PromptPopWindow.Curs
         setOnLongClickListener(new OnLongClickListener() {
             @Override
             public boolean onLongClick(View view) {
+                orgSpannable = new SpannableString(getSpannableText());
                 updateCursorInWindow();
                 post(new Runnable() {
                     @Override
@@ -68,13 +70,13 @@ public class SelectableTextView extends TextView implements PromptPopWindow.Curs
         if (getText() == null) {
             return;
         }
-        Spannable spannableText = getSpannableText();
+        final Spannable spannableText = getSpannableText();
         if (mSelectedTextInfo == null) {
             if (spannableText != null) {
                 mSelectedTextInfo = new SelectedTextInfo();
                 mSelectedTextInfo.start = 0;
                 mSelectedTextInfo.end = spannableText.length();
-                mSelectedTextInfo.spannable = spannableText;
+                mSelectedTextInfo.spannable = orgSpannable;
 
                 Layout layout = getLayout();
                 mSelectedTextInfo.startPosition[0] = (int) layout.getPrimaryHorizontal(mSelectedTextInfo.start);
@@ -92,10 +94,9 @@ public class SelectableTextView extends TextView implements PromptPopWindow.Curs
 
         if (mSelectedTextInfo != null && spannableText != null) {
             showCursor();
-            spannableText.removeSpan(backgroundColorSpan);
-            spannableText.setSpan(backgroundColorSpan, mSelectedTextInfo.start, mSelectedTextInfo.end, Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
-            setText(spannableText);
+            updateText(spannableText);
         }
+
     }
 
     private void showCursor() {
@@ -125,6 +126,32 @@ public class SelectableTextView extends TextView implements PromptPopWindow.Curs
         promptPopWindow.setCursorVisible(false, !hitRect.isEmpty() && hitRect.contains(right.x, right.y));
         promptPopWindow.showCursor(this, left, right, mSelectedTextInfo.startLineTop + coors[1] + getPaddingTop());
 
+    }
+
+    private void updateText(Spannable spannableText) {
+        spannableText.removeSpan(backgroundColorSpan);
+        CustomImageSpan[] customImageSpans = spannableText.getSpans(0, spannableText.length(), CustomImageSpan.class);
+        if (mSelectedTextInfo != null) {
+            spannableText.setSpan(backgroundColorSpan, mSelectedTextInfo.start, mSelectedTextInfo.end, Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
+            if (customImageSpans != null && customImageSpans.length > 0) {
+                for (int i = 0; i < customImageSpans.length; i++) {
+                    if (spannableText.getSpanStart(customImageSpans[i]) >= mSelectedTextInfo.start && spannableText.getSpanEnd(customImageSpans[i]) <= mSelectedTextInfo.end) {
+                        customImageSpans[i].setBlackLayer(true);
+                    } else {
+                        customImageSpans[i].setBlackLayer(false);
+                    }
+                }
+            }
+        } else {
+            if (customImageSpans != null && customImageSpans.length > 0) {
+                for (int i = 0; i < customImageSpans.length; i++) {
+                    customImageSpans[i].setBlackLayer(false);
+                }
+            }
+        }
+
+
+        setText(spannableText);
     }
 
     private Spannable getSpannableText() {
@@ -204,7 +231,7 @@ public class SelectableTextView extends TextView implements PromptPopWindow.Curs
                         mSelectedTextInfo.start = index;
                         mSelectedTextInfo.startPosition[0] = (int) (layout.getPrimaryHorizontal(index));
                         mSelectedTextInfo.startPosition[1] = layout.getLineBottom(line);
-                        mSelectedTextInfo.spannable = (Spannable) getSpannableText().subSequence(index, mSelectedTextInfo.end);
+                        mSelectedTextInfo.spannable = (Spannable) orgSpannable.subSequence(index, mSelectedTextInfo.end);
                         mSelectedTextInfo.startLineTop = layout.getLineTop(line);
                     }
 
@@ -215,7 +242,7 @@ public class SelectableTextView extends TextView implements PromptPopWindow.Curs
                         mSelectedTextInfo.end = index;
                         mSelectedTextInfo.endPosition[0] = (int) (layout.getSecondaryHorizontal(index));
                         mSelectedTextInfo.endPosition[1] = layout.getLineBottom(line);
-                        mSelectedTextInfo.spannable = (Spannable) getSpannableText().subSequence(mSelectedTextInfo.start, index);
+                        mSelectedTextInfo.spannable = (Spannable) orgSpannable.subSequence(mSelectedTextInfo.start, index);
                         mSelectedTextInfo.endLineTop = layout.getLineTop(line);
                     }
 
@@ -259,8 +286,7 @@ public class SelectableTextView extends TextView implements PromptPopWindow.Curs
     public void reset() {
         mSelectedTextInfo = null;
         Spannable spannable = getSpannableText();
-        spannable.removeSpan(backgroundColorSpan);
-        setText(spannable);
+        updateText(spannable);
     }
 
     @Override

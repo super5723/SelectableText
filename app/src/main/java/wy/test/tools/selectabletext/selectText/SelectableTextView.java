@@ -334,9 +334,9 @@ public class SelectableTextView extends TextView implements PromptPopWindow.Curs
                 }
             });
         } else if (item.action == OperationItem.ACTION_COPY) {
-                Toast.makeText(getContext(), getText(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), mSelectedTextInfo.spannable, Toast.LENGTH_SHORT).show();
             ClipboardManager cm = (ClipboardManager) getContext().getSystemService(Context.CLIPBOARD_SERVICE);
-            cm.setText(getText());
+            cm.setText(mSelectedTextInfo.spannable);
             promptPopWindow.dismiss();
             reset();
         } else {

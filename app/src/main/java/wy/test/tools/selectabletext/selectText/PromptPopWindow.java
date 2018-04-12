@@ -3,6 +3,7 @@ package wy.test.tools.selectabletext.selectText;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Point;
+import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.util.Log;
 import android.view.Gravity;
@@ -11,6 +12,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.PopupWindow;
+
 
 /**
  * Created by wangyang53 on 2018/3/26.
@@ -21,8 +23,9 @@ public class PromptPopWindow extends PopupWindow implements CursorView.OnCursorT
     private CursorListener mCursorTouchListener;
     private CursorView leftCursor, rightCursor;
     private OperationView mOperationView;
-    private Point left, right;
+    private Point lastLeft = new Point(), lastRight = new Point();
     private boolean leftCursorVisible = true, rightCursorVisible = true;
+    private boolean needShowOperationView = false;
 
     public PromptPopWindow(Context context) {
         super(context);
@@ -46,7 +49,7 @@ public class PromptPopWindow extends PopupWindow implements CursorView.OnCursorT
         setOnDismissListener(new OnDismissListener() {
             @Override
             public void onDismiss() {
-                Log.d("wywy", "cursor  window dismiss");
+                Log.d(TAG, "cursor  window dismiss");
                 if (mCursorTouchListener != null)
                     mCursorTouchListener.onCursorDismiss();
                 if (mOperationView != null)
@@ -72,7 +75,8 @@ public class PromptPopWindow extends PopupWindow implements CursorView.OnCursorT
      * @param left
      * @param right
      */
-    public void showCursor(View parent, Point left, Point right, int startLineTopInWindow) {
+    public void updateCursor(View parent, Point left, Point right, int startLineTopInWindow, Rect visibleRect) {
+        Log.d(TAG, "updateCursor:" + left + "  " + right + "  " + startLineTopInWindow);
         if (left.x <= 0)
             left.x = getWidth() / 2;
         if (!isShowing()) {
@@ -96,9 +100,20 @@ public class PromptPopWindow extends PopupWindow implements CursorView.OnCursorT
         }
 
 
-        this.left = new Point(left);
-        this.right = new Point(right);
-        this.left.y = startLineTopInWindow;//操作框相对于 起始文字top位置偏移
+        this.lastLeft = left;
+        lastLeft.y = startLineTopInWindow;
+        this.lastRight = right;
+
+        if (needShowOperationView) {
+            if (visibleRect.isEmpty()) {
+                mOperationView.setVisibility(View.INVISIBLE);
+                return;
+            } else mOperationView.setVisibility(View.VISIBLE);
+        }
+
+        if (mOperationView != null) {
+            mOperationView.update(lastLeft, lastRight);
+        }
     }
 
     public void setCursorVisible(boolean left, boolean visible) {
@@ -111,14 +126,15 @@ public class PromptPopWindow extends PopupWindow implements CursorView.OnCursorT
     }
 
     public void showOperation() {
+        needShowOperationView = true;
         if (mOperationView != null) {
             mOperationView.setVisibility(View.VISIBLE);
-            mOperationView.show(left, right);
         }
 
     }
 
     public void hideOperation() {
+        needShowOperationView = false;
         if (mOperationView != null) {
             mOperationView.setVisibility(View.INVISIBLE);
         }

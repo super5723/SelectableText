@@ -15,7 +15,7 @@ import android.view.ViewGroup;
 public class CursorView extends View {
     private boolean isLeft;
     private Paint mPaint;
-    private final static int CIRCLE_RADIUS = 25;
+    private final static int CIRCLE_RADIUS = 20;
     private final static int PADDING = 2;
     private OnCursorTouchListener listener;
 

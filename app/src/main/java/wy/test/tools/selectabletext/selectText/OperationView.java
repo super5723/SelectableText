@@ -14,6 +14,7 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -98,7 +99,7 @@ public class OperationView extends LinearLayout {
             if (i != operationList.size() - 1) {
                 View divider = new View(context);
                 divider.setBackgroundColor(Color.WHITE);
-                LayoutParams mlp = new LayoutParams(1, ViewGroup.LayoutParams.MATCH_PARENT);
+                LinearLayout.LayoutParams mlp = new LinearLayout.LayoutParams(1, ViewGroup.LayoutParams.MATCH_PARENT);
                 mlp.setMargins(20, 0, 20, 0);
                 divider.setLayoutParams(mlp);
                 ll_list.addView(divider);
@@ -130,8 +131,8 @@ public class OperationView extends LinearLayout {
         void onOperationClick(OperationItem item);
     }
 
-    public void show(Point left, Point right) {
-        Log.d(TAG, "show:" + left + "  " + right);
+    public void update(Point left, Point right) {
+        Log.d(TAG, "update:" + left + "  " + right);
         int centerArrowX = (left.x + right.x) / 2;
         if (centerArrowX < left.x)
             centerArrowX = left.x;
@@ -143,15 +144,21 @@ public class OperationView extends LinearLayout {
             x = MIN_MARGIN_LEFT_RIGHT;
         }
 
-        y = left.y - MIN_MARGIN_TOP - getHeight();
         boolean down = true;
+        y = left.y - MIN_MARGIN_TOP - getHeight();
         if (y < screenHeight / 5) {
             y = right.y + MIN_MARGIN_TOP;
             down = false;
         }
         if (y > screenHeight / 5 * 4) {
-            y = left.y - MIN_MARGIN_TOP - getHeight();
-            down = true;
+            int tmp = left.y - MIN_MARGIN_TOP - getHeight();
+            if (tmp < screenHeight / 5) {
+                y = (left.y + right.y) / 2;
+                down = false;
+            } else {
+                y = tmp;
+                down = true;
+            }
         }
 
         setX(x);

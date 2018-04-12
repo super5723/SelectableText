@@ -19,7 +19,7 @@ import java.lang.ref.WeakReference;
 
 public class CustomImageSpan extends ImageSpan {
     private boolean blackLayer = false;
-    private ColorDrawable layerDrawable = new ColorDrawable(Color.GRAY);
+    private WeakReference<ColorDrawable> layerDrawableWeakReference =new WeakReference<ColorDrawable>(new ColorDrawable(Color.GRAY));
 
     public CustomImageSpan(Bitmap b) {
         super(b);
@@ -78,30 +78,32 @@ public class CustomImageSpan extends ImageSpan {
 //        super.draw(canvas, text, start, end, x, top, y, bottom, paint);
         Drawable b = getCachedDrawable();
 
-
         canvas.save();
         canvas.translate(x, 0);
         if (blackLayer) {
             Rect rect = new Rect(b.getBounds());
             rect.bottom = bottom;
             rect.top = top;
-            layerDrawable.setBounds(rect);
-            layerDrawable.draw(canvas);
+            ColorDrawable layerDrawable = layerDrawableWeakReference.get();
+            if (layerDrawable != null) {
+                layerDrawable.setBounds(rect);
+                layerDrawable.draw(canvas);
+            } else {
+                ColorDrawable tempDrawable = new ColorDrawable(Color.GRAY);
+                tempDrawable.setBounds(rect);
+                tempDrawable.draw(canvas);
+            }
+
         }
         canvas.restore();
-
         canvas.save();
-
         int transY = bottom - b.getBounds().bottom;
         if (mVerticalAlignment == ALIGN_BASELINE) {
             transY -= paint.getFontMetricsInt().descent;
         }
-
         canvas.translate(x, transY);
         b.draw(canvas);
         canvas.restore();
-
-
     }
 
     private Drawable getCachedDrawable() {

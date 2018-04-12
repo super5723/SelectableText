@@ -1,5 +1,6 @@
 package wy.test.tools.selectabletext.selectText;
 
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Point;
@@ -8,13 +9,16 @@ import android.text.Layout;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.Spanned;
+import android.text.TextUtils;
 import android.text.style.BackgroundColorSpan;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.widget.TextView;
 import android.widget.Toast;
+
 
 /**
  * Created by wangyang53 on 2018/3/26.
@@ -28,6 +32,7 @@ public class SelectableTextView extends TextView implements PromptPopWindow.Curs
     private BackgroundColorSpan backgroundColorSpan = new BackgroundColorSpan(Color.GRAY);
     private int downX, downY;
     private Spannable orgSpannable;
+    private InternalOnPreDrawListener mInternalPreOnDrawListener;
 
     public SelectableTextView(Context context) {
         super(context);
@@ -50,8 +55,14 @@ public class SelectableTextView extends TextView implements PromptPopWindow.Curs
         setOnLongClickListener(new OnLongClickListener() {
             @Override
             public boolean onLongClick(View view) {
+                if (mInternalPreOnDrawListener == null) {
+                    mInternalPreOnDrawListener = new InternalOnPreDrawListener();
+                    getViewTreeObserver().addOnPreDrawListener(mInternalPreOnDrawListener);
+                }
+
                 orgSpannable = new SpannableString(getSpannableText());
-                updateCursorInWindow();
+                selectAll();
+                updateSelected();
                 post(new Runnable() {
                     @Override
                     public void run() {
@@ -64,43 +75,44 @@ public class SelectableTextView extends TextView implements PromptPopWindow.Curs
                 return true;
             }
         });
+
     }
 
-    private void updateCursorInWindow() {
-        if (getText() == null) {
+    private void updateSelected() {
+        Log.d(TAG, "updateSelected");
+        if (mSelectedTextInfo == null) {
             return;
         }
         final Spannable spannableText = getSpannableText();
-        if (mSelectedTextInfo == null) {
-            if (spannableText != null) {
-                mSelectedTextInfo = new SelectedTextInfo();
-                mSelectedTextInfo.start = 0;
-                mSelectedTextInfo.end = spannableText.length();
-                mSelectedTextInfo.spannable = orgSpannable;
-
-                Layout layout = getLayout();
-                mSelectedTextInfo.startPosition[0] = (int) layout.getPrimaryHorizontal(mSelectedTextInfo.start);
-                int startLine = layout.getLineForOffset(mSelectedTextInfo.start);
-                mSelectedTextInfo.startPosition[1] = (int) layout.getLineBottom(startLine);
-                mSelectedTextInfo.startLineTop = layout.getLineTop(startLine);
-
-                int endLine = layout.getLineForOffset(mSelectedTextInfo.end);
-                mSelectedTextInfo.endPosition[0] = (int) layout.getSecondaryHorizontal(mSelectedTextInfo.end);
-                mSelectedTextInfo.endPosition[1] = (int) layout.getLineBottom(endLine);
-                mSelectedTextInfo.endLineTop = layout.getLineTop(endLine);
-
-            }
-        }
-
         if (mSelectedTextInfo != null && spannableText != null) {
             showCursor();
             updateText(spannableText);
         }
+    }
 
+    private void selectAll() {
+        Log.d(TAG, "selectAll");
+        if (TextUtils.isEmpty(orgSpannable))
+            return;
+        mSelectedTextInfo = new SelectedTextInfo();
+        mSelectedTextInfo.start = 0;
+        mSelectedTextInfo.end = orgSpannable.length();
+        mSelectedTextInfo.spannable = orgSpannable;
+
+        Layout layout = getLayout();
+        mSelectedTextInfo.startPosition[0] = (int) layout.getPrimaryHorizontal(mSelectedTextInfo.start);
+        int startLine = layout.getLineForOffset(mSelectedTextInfo.start);
+        mSelectedTextInfo.startPosition[1] = (int) layout.getLineBottom(startLine);
+        mSelectedTextInfo.startLineTop = layout.getLineTop(startLine);
+
+        int endLine = layout.getLineForOffset(mSelectedTextInfo.end);
+        mSelectedTextInfo.endPosition[0] = (int) layout.getSecondaryHorizontal(mSelectedTextInfo.end);
+        mSelectedTextInfo.endPosition[1] = (int) layout.getLineBottom(endLine);
+        mSelectedTextInfo.endLineTop = layout.getLineTop(endLine);
     }
 
     private void showCursor() {
-        Log.d(TAG, "showCursor");
+        Log.d(TAG, "updateCursor");
         int x = 0, y = 0;
         int[] coors = getLocation();
         if (promptPopWindow == null) {
@@ -116,15 +128,15 @@ public class SelectableTextView extends TextView implements PromptPopWindow.Curs
         y = coors[1] + mSelectedTextInfo.endPosition[1] + getPaddingTop();
         Point right = new Point(x, y);
 
-        Rect hitRect = new Rect();
-        getGlobalVisibleRect(hitRect);
+        Rect visibleRect = new Rect();
+        getGlobalVisibleRect(visibleRect);
 
-        hitRect.left = hitRect.left - CursorView.getFixWidth();
-        hitRect.right += 1;
-        hitRect.bottom += 1;
-        promptPopWindow.setCursorVisible(true, !hitRect.isEmpty() && hitRect.contains(left.x, left.y));
-        promptPopWindow.setCursorVisible(false, !hitRect.isEmpty() && hitRect.contains(right.x, right.y));
-        promptPopWindow.showCursor(this, left, right, mSelectedTextInfo.startLineTop + coors[1] + getPaddingTop());
+        visibleRect.left = visibleRect.left - CursorView.getFixWidth();
+        visibleRect.right += 1;
+        visibleRect.bottom += 1;
+        promptPopWindow.setCursorVisible(true, !visibleRect.isEmpty() && visibleRect.contains(left.x, left.y));
+        promptPopWindow.setCursorVisible(false, !visibleRect.isEmpty() && visibleRect.contains(right.x, right.y));
+        promptPopWindow.updateCursor(this, left, right, mSelectedTextInfo.startLineTop + coors[1] + getPaddingTop(), visibleRect);
 
     }
 
@@ -220,6 +232,8 @@ public class SelectableTextView extends TextView implements PromptPopWindow.Curs
                 }
                 Log.d(TAG, "OnCursorTouch verticalOffset:" + verticalOffset + "  horizontalOffset:" + horizontalOffset);
                 Layout layout = getLayout();
+                if (layout == null)
+                    return true;
                 int line = layout.getLineForVertical(verticalOffset);
                 int index = layout.getOffsetForHorizontal(line, horizontalOffset);
                 Log.d(TAG, "OnCursorTouch line:" + line + "  index:" + index);
@@ -248,7 +262,7 @@ public class SelectableTextView extends TextView implements PromptPopWindow.Curs
 
                 }
 
-                updateCursorInWindow();
+                updateSelected();
                 break;
         }
         return true;
@@ -262,7 +276,9 @@ public class SelectableTextView extends TextView implements PromptPopWindow.Curs
             int y = (int) motionEvent.getY();
             int verticalOffset = y - getPaddingTop() - location[1];
             int horizontalOffset = x - getPaddingLeft() - location[0];
-            if (verticalOffset < 0 || horizontalOffset < 0 || verticalOffset > getHeight() || horizontalOffset > getWidth()) {
+            final int adjust_range = 20;//允许的触碰误差
+
+            if (verticalOffset < -adjust_range || horizontalOffset < -adjust_range || verticalOffset > getHeight() + adjust_range || horizontalOffset > getWidth() + adjust_range) {
                 promptPopWindow.dismiss();
                 return true;
             }
@@ -292,15 +308,23 @@ public class SelectableTextView extends TextView implements PromptPopWindow.Curs
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
-        reset();
+        if (promptPopWindow != null && promptPopWindow.isShowing()) {
+            promptPopWindow.dismiss();
+        }
     }
+
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+    }
+
 
     @Override
     public void onOperationClick(OperationItem item) {
         Log.d(TAG, "onOperationClick item:" + item);
         if (item.action == OperationItem.ACTION_SELECT_ALL) {
-            mSelectedTextInfo = null;
-            updateCursorInWindow();
+            selectAll();
+            updateSelected();
             post(new Runnable() {
                 @Override
                 public void run() {
@@ -310,7 +334,9 @@ public class SelectableTextView extends TextView implements PromptPopWindow.Curs
                 }
             });
         } else if (item.action == OperationItem.ACTION_COPY) {
-            Toast.makeText(getContext(), mSelectedTextInfo.spannable, Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), getText(), Toast.LENGTH_SHORT).show();
+            ClipboardManager cm = (ClipboardManager) getContext().getSystemService(Context.CLIPBOARD_SERVICE);
+            cm.setText(getText());
             promptPopWindow.dismiss();
             reset();
         } else {
@@ -320,4 +346,16 @@ public class SelectableTextView extends TextView implements PromptPopWindow.Curs
 
 
     }
+
+    class InternalOnPreDrawListener implements ViewTreeObserver.OnPreDrawListener {
+
+        @Override
+        public boolean onPreDraw() {
+            if (promptPopWindow != null && promptPopWindow.isShowing()) {
+                updateSelected();
+            }
+            return true;
+        }
+    }
+
 }

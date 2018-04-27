@@ -15,10 +15,13 @@ import java.lang.ref.WeakReference;
 
 /**
  * Created by wangyang53 on 2018/4/9.
+ * edit by wangyaowu on 2028/4/11 to add center align
  */
 
 public class CustomImageSpan extends ImageSpan {
     private boolean blackLayer = false;
+    public static int ALIGN_CENTER = 2;
+
     private WeakReference<ColorDrawable> layerDrawableWeakReference =new WeakReference<ColorDrawable>(new ColorDrawable(Color.GRAY));
 
     public CustomImageSpan(Bitmap b) {
@@ -77,10 +80,11 @@ public class CustomImageSpan extends ImageSpan {
     public void draw(Canvas canvas, CharSequence text, int start, int end, float x, int top, int y, int bottom, Paint paint) {
 //        super.draw(canvas, text, start, end, x, top, y, bottom, paint);
         Drawable b = getCachedDrawable();
-
-        canvas.save();
-        canvas.translate(x, 0);
+        Paint.FontMetricsInt fm = paint.getFontMetricsInt();
+        //画黑色浮层
         if (blackLayer) {
+            canvas.save();
+            canvas.translate(x, 0);
             Rect rect = new Rect(b.getBounds());
             rect.bottom = bottom;
             rect.top = top;
@@ -93,17 +97,39 @@ public class CustomImageSpan extends ImageSpan {
                 tempDrawable.setBounds(rect);
                 tempDrawable.draw(canvas);
             }
+            canvas.restore();
+        }
 
-        }
-        canvas.restore();
-        canvas.save();
+        //iamgespan样式实现
         int transY = bottom - b.getBounds().bottom;
-        if (mVerticalAlignment == ALIGN_BASELINE) {
-            transY -= paint.getFontMetricsInt().descent;
-        }
+        if (mVerticalAlignment == ALIGN_BASELINE)
+            transY -= fm.descent;
+        else if (mVerticalAlignment == ALIGN_CENTER)
+            transY = (y + fm.descent + y + fm.ascent) / 2 - b.getBounds().bottom / 2 ;//计算y方向的位移
+        canvas.save();
         canvas.translate(x, transY);
         b.draw(canvas);
         canvas.restore();
+    }
+
+    @Override
+    public int getSize(Paint paint, CharSequence text, int start, int end, Paint.FontMetricsInt fm) {
+        Drawable d = getDrawable();
+        Rect rect = d.getBounds();
+        if (fm != null){
+            Paint.FontMetricsInt fontMetricsInt = paint.getFontMetricsInt();
+            int fheight = fontMetricsInt.bottom - fontMetricsInt.top;
+            int drheight = rect.bottom - rect.top;
+
+            int top = drheight / 2 - fheight / 4;
+            int bottom = drheight / 2 + fheight / 4;
+
+            fm.ascent = -bottom;
+            fm.top = - bottom;
+            fm.bottom = top;
+            fm.descent = top;
+        }
+        return rect.right;
     }
 
     private Drawable getCachedDrawable() {

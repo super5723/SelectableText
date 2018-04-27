@@ -19,7 +19,6 @@ import android.widget.Toast;
 
 import wy.test.tools.selectabletext.R;
 
-
 /**
  * Created by wangyang53 on 2018/4/9.
  */
@@ -65,7 +64,7 @@ public class SimpleSelectableTextView extends TextView {
         ll_list.setBackgroundResource(R.drawable.bg_operation);
         ll_list.setPadding(20, 10, 20, 10);
         TextView tv_copy = new TextView(getContext());
-        tv_copy.setText("copy");
+        tv_copy.setText("复制全部");
         tv_copy.setTextColor(Color.WHITE);
         tv_copy.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         ll_list.addView(tv_copy);
@@ -144,7 +143,7 @@ public class SimpleSelectableTextView extends TextView {
 
 
     protected void onCopy() {
-            Toast.makeText(getContext(), getText(), Toast.LENGTH_SHORT).show();
+        Toast.makeText(getContext(), getText(), Toast.LENGTH_SHORT).show();
         ClipboardManager cm = (ClipboardManager) getContext().getSystemService(Context.CLIPBOARD_SERVICE);
         cm.setText(getText());
     }

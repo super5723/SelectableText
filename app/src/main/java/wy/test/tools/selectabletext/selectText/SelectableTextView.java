@@ -19,7 +19,6 @@ import android.view.ViewTreeObserver;
 import android.widget.TextView;
 import android.widget.Toast;
 
-
 /**
  * Created by wangyang53 on 2018/3/26.
  */
@@ -100,15 +99,18 @@ public class SelectableTextView extends TextView implements PromptPopWindow.Curs
         mSelectedTextInfo.spannable = orgSpannable;
 
         Layout layout = getLayout();
-        mSelectedTextInfo.startPosition[0] = (int) layout.getPrimaryHorizontal(mSelectedTextInfo.start);
-        int startLine = layout.getLineForOffset(mSelectedTextInfo.start);
-        mSelectedTextInfo.startPosition[1] = (int) layout.getLineBottom(startLine);
-        mSelectedTextInfo.startLineTop = layout.getLineTop(startLine);
+        if (layout != null) {
+            mSelectedTextInfo.startPosition[0] = (int) layout.getPrimaryHorizontal(mSelectedTextInfo.start);
+            int startLine = layout.getLineForOffset(mSelectedTextInfo.start);
+            mSelectedTextInfo.startPosition[1] = (int) layout.getLineBottom(startLine);
+            mSelectedTextInfo.startLineTop = layout.getLineTop(startLine);
 
-        int endLine = layout.getLineForOffset(mSelectedTextInfo.end);
-        mSelectedTextInfo.endPosition[0] = (int) layout.getSecondaryHorizontal(mSelectedTextInfo.end);
-        mSelectedTextInfo.endPosition[1] = (int) layout.getLineBottom(endLine);
-        mSelectedTextInfo.endLineTop = layout.getLineTop(endLine);
+            int endLine = layout.getLineForOffset(mSelectedTextInfo.end);
+            mSelectedTextInfo.endPosition[0] = (int) layout.getSecondaryHorizontal(mSelectedTextInfo.end);
+            mSelectedTextInfo.endPosition[1] = (int) layout.getLineBottom(endLine);
+            mSelectedTextInfo.endLineTop = layout.getLineTop(endLine);
+        }
+
     }
 
     private void showCursor() {
@@ -285,11 +287,14 @@ public class SelectableTextView extends TextView implements PromptPopWindow.Curs
 
             Log.d(TAG, "onPopLayoutTouch verticalOffset:" + verticalOffset + "   horizontalOffset:" + horizontalOffset);
             Layout layout = getLayout();
-            int line = layout.getLineForVertical(verticalOffset);
-            int index = layout.getOffsetForHorizontal(line, horizontalOffset);
-            Log.d(TAG, "onPopLayoutTouch line:" + line + "  index:" + index);
-            if (index <= mSelectedTextInfo.start || index >= mSelectedTextInfo.end)
-                promptPopWindow.dismiss();
+            if (layout != null) {
+                int line = layout.getLineForVertical(verticalOffset);
+                int index = layout.getOffsetForHorizontal(line, horizontalOffset);
+                Log.d(TAG, "onPopLayoutTouch line:" + line + "  index:" + index);
+                if (index <= mSelectedTextInfo.start || index >= mSelectedTextInfo.end)
+                    promptPopWindow.dismiss();
+            }
+
         }
         return true;
     }
@@ -334,7 +339,7 @@ public class SelectableTextView extends TextView implements PromptPopWindow.Curs
                 }
             });
         } else if (item.action == OperationItem.ACTION_COPY) {
-                Toast.makeText(getContext(), mSelectedTextInfo.spannable, Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), mSelectedTextInfo.spannable, Toast.LENGTH_SHORT).show();
             ClipboardManager cm = (ClipboardManager) getContext().getSystemService(Context.CLIPBOARD_SERVICE);
             cm.setText(mSelectedTextInfo.spannable);
             promptPopWindow.dismiss();
